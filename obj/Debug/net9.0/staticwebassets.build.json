@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "TROsOGvJPWdVcTqY4d50gllU5Xvb23ewxwDJCe7VQ9k=",
+  "Source": "HealthcareAPI",
+  "BasePath": "_content/HealthcareAPI",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
