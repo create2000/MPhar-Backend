@@ -32,9 +32,9 @@ namespace HealthcareApp.API.Controllers
         {
             var user = new AppUser
             {
-                UserName = model.Email,
+                UserName = model.UserName,
                 Email = model.Email,
-                Role = model.Role // Optionally assign role from request
+                Role = model.Role ?? "User" // Optionally assign role from request
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
@@ -89,6 +89,7 @@ namespace HealthcareApp.API.Controllers
     // Models for SignUp and Login
     public class SignUpModel
     {
+        public string UserName { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
         public string Role { get; set; } // Can be "Admin", "HealthcareProfessional", etc.
