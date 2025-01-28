@@ -14,18 +14,30 @@ namespace HealthcareApp.Infrastructure.Services
     {
         private readonly JwtSettings _jwtSettings;
 
-        public TokenService(IOptions<JwtSettings> jwtSettings)
-        {
-            _jwtSettings = jwtSettings.Value ?? throw new ArgumentNullException(nameof(jwtSettings));
+      public TokenService(IOptions<JwtSettings> jwtSettings)
+{
+    if (jwtSettings == null || jwtSettings.Value == null)
+    {
+        throw new ArgumentNullException(nameof(jwtSettings), "JwtSettings is null.");
+    }
 
-            // Validate JwtSettings
-            if (string.IsNullOrEmpty(_jwtSettings.Secret) || 
-                string.IsNullOrEmpty(_jwtSettings.Issuer) || 
-                string.IsNullOrEmpty(_jwtSettings.Audience))
-            {
-                throw new InvalidOperationException("JWT settings are not properly configured.");
-            }
-        }
+    _jwtSettings = jwtSettings.Value;
+
+    // Validate JwtSettings
+    if (string.IsNullOrEmpty(_jwtSettings.Secret) ||
+        string.IsNullOrEmpty(_jwtSettings.Issuer) ||
+        string.IsNullOrEmpty(_jwtSettings.Audience))
+    {
+        throw new InvalidOperationException("JWT settings are not properly configured.");
+    }
+
+    // Ensure the secret key is long enough
+    var keyBytes = Encoding.UTF8.GetBytes(_jwtSettings.Secret);
+    if (keyBytes.Length < 32) // 32 bytes = 256 bits
+    {
+        throw new InvalidOperationException("JWT secret key must be at least 32 bytes (256 bits).");
+    }
+}
 
         public string GenerateToken(AppUser user)
         {

@@ -22,42 +22,57 @@ namespace HealthcareApp.Application.Services
         }
 
         public async Task<string> RegisterAsync(RegisterDto dto)
-        {
-            // Check if user already exists
-            var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
-            if (existingUser != null)
-            {
-                throw new InvalidOperationException("User with this email already exists.");
-            }
+{
+    // Check if user already exists
+    var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
+    if (existingUser != null)
+    {
+        throw new InvalidOperationException("User with this email already exists.");
+    }
 
-            // Create new user
-            var newUser = new AppUser
-            {
-                Email = dto.Email,
-                PasswordHash = dto.Password, // Hash the password in real implementation
-                UserName = dto.UserName,
-                Role = "User" // Default role
-            };
+    // Create new user and hash the password
+    var newUser = new AppUser
+    {
+        Email = dto.Email,
+        UserName = dto.UserName,
+        Role = "User" // Default role
+    };
+    newUser.PasswordHash = _passwordHasher.HashPassword(newUser, dto.Password);
 
-              // Hash the password
-            newUser.PasswordHash = _passwordHasher.HashPassword(newUser, dto.Password);
-            await _userRepository.CreateUserAsync(newUser);
-            // Generate token for the new user
-            return _tokenService.GenerateToken(newUser);
-        }
+    // Log the hashed password for debugging
+    Console.WriteLine($"Registering user with password hash: {newUser.PasswordHash}");
 
-        public async Task<string> LoginAsync(LoginDto dto)
-        {
-            // Validate user credentials
-            var user = await _userRepository.GetByEmailAsync(dto.Email);
-            if (user == null || user.PasswordHash != dto.Password) // Add password hashing validation
-            {
-                throw new UnauthorizedAccessException("Invalid email or password.");
-            }
+    // Store the user in the database
+    await _userRepository.CreateUserAsync(newUser);
 
-            // Generate token for the user
-            return _tokenService.GenerateToken(user);
-        }
+    // Generate and return a token
+    return _tokenService.GenerateToken(newUser);
+}
+
+
+public async Task<string> LoginAsync(LoginDto dto)
+{
+    // Validate user credentials
+    var user = await _userRepository.GetByEmailAsync(dto.Email);
+    if (user == null)
+    {
+        throw new UnauthorizedAccessException("Invalid email or password.");
+    }
+
+    // Log the hashed password for debugging
+    Console.WriteLine($"Logging in user with password hash: {user.PasswordHash}");
+
+    // Verify the password
+    var passwordVerificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
+    if (passwordVerificationResult != PasswordVerificationResult.Success)
+    {
+        throw new UnauthorizedAccessException("Invalid email or password.");
+    }
+
+    // Generate and return a token
+    return _tokenService.GenerateToken(user);
+}
+
 
          public async Task<bool> LogoutAsync(string userId)
         {
