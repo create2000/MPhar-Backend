@@ -65,28 +65,41 @@ namespace HealthcareApp.API.Controllers
         }
 
         // POST api/auth/login
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto dto) // This should reference HealthcareApp.Application.DTOs.LoginDto
+       [HttpPost("login")]
+public async Task<IActionResult> Login([FromBody] LoginDto dto)
+{
+    // 1. Find the user by username (preferred) or email (if username not found)
+    var user = await _userManager.FindByNameAsync(dto.Username);  // Try username first
+    if (user == null)
+    {
+        user = await _userManager.FindByEmailAsync(dto.Email); // Fallback to email
+        if (user == null)
         {
-            var result = await _authService.LoginAsync(dto);
-            if (result == null)
-                return Unauthorized(new { message = "Invalid email or password" });
-
-            var user = await _userManager.FindByEmailAsync(dto.Email);
-            if (user == null)
-                return Unauthorized(new { message = "Invalid email or password" });
-
-            var token = GenerateJwtToken(user);
-            return Ok(new { token });
+            return Unauthorized(new { message = "Invalid username or email" }); // Unified message
         }
+    }
+
+    // 2. Check the password using UserManager
+    var isValidPassword = await _userManager.CheckPasswordAsync(user, dto.Password);
+    if (!isValidPassword)
+    {
+        return Unauthorized(new { message = "Invalid password" }); // Separate password message
+    }
+
+
+    // 3. Generate JWT token (only if authentication is successful)
+    var token = GenerateJwtToken(user);
+    return Ok(new { token });
+}
 
         // Method to generate JWT token
         private string GenerateJwtToken(AppUser user)
 {
-    var claims = new[]
+      var claims = new[]
     {
-        new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),  // Convert Guid to string
         new Claim(JwtRegisteredClaimNames.Email, user.Email),
+        new Claim(ClaimTypes.Name, user.UserName),
         new Claim(ClaimTypes.Role, user.Role)  // Make sure user.Role is not null!
     };
 

@@ -36,7 +36,7 @@ public class UserRepository : IUserRepository
     {
         try
         {
-            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+            return await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id.ToString() == userId);
         }
         catch (Exception ex)
         {

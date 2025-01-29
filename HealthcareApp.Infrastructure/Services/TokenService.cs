@@ -48,7 +48,7 @@ namespace HealthcareApp.Infrastructure.Services
                     new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim(ClaimTypes.Role, user.Role),
-                    new Claim(ClaimTypes.Name, user.UserName) // Optional additional claim
+                    
                 };
 
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
