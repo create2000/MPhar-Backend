@@ -10,6 +10,10 @@ namespace HealthcareApp.Infrastructure.Data
         public DbSet<Patient> Patients { get; set; } = null!;
         public DbSet<Recommendation> Recommendations { get; set; } = null!;
         public DbSet<AppUser> Users { get; set; }
+        public DbSet<Illness> Illnesses { get; set; }
+        public DbSet<HealthProfessional> HealthProfessionals { get; set; }
+        public DbSet<PatientReport> PatientReports { get; set; }
+
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

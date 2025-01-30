@@ -43,6 +43,16 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IHealthProfessionalService, HealthProfessionalService>();
+builder.Services.AddScoped<IHealthProfessionalRepository, HealthProfessionalRepository>();
+builder.Services.AddScoped<IPatientReportService, PatientReportService>();
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+builder.Services.AddScoped<IRecommendationRepository, RecommendationRepository>();
+builder.Services.AddScoped<IIllnessService, IllnessService>();
+builder.Services.AddScoped<IIllnessRepository, IllnessRepository>();
+
+
+
 
 // Add CORS
 builder.Services.AddCors(options =>

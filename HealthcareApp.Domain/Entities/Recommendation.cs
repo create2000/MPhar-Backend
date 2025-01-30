@@ -1,13 +1,14 @@
 namespace HealthcareApp.Domain.Entities
 {
-    public class Recommendation
-    {
-        public int Id { get; set; }
-        public int PatientId { get; set; }
-        public string Type { get; set; } = string.Empty; // e.g., Allergy Check, Screening
-        public bool IsCompleted { get; set; }
-        public DateTime CreatedAt { get; set; }
+    // HealthcareApp.Domain/Entities/Recommendation.cs
+public class Recommendation
+{
+    public int Id { get; set; }
+    public int PatientId { get; set; }
+    public int HealthProfessionalId { get; set; }
+    public string RecommendationText { get; set; }
+    public bool IsCompleted { get; set; } // Whether the patient has marked it as completed
+    public DateTime DateCreated { get; set; }
+}
 
-        public Patient? Patient { get; set; } // Navigation property
-    }
 }
