@@ -51,9 +51,6 @@ builder.Services.AddScoped<IRecommendationRepository, RecommendationRepository>(
 builder.Services.AddScoped<IIllnessService, IllnessService>();
 builder.Services.AddScoped<IIllnessRepository, IllnessRepository>();
 
-
-
-
 // Add CORS
 builder.Services.AddCors(options =>
 {
@@ -66,7 +63,11 @@ builder.Services.AddCors(options =>
 });
 
 // Add Controllers and Swagger
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+.AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -83,7 +84,10 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Healthcare API v1");
+    });
 }
 
 // Use CORS middleware

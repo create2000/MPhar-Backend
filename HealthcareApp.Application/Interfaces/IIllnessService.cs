@@ -8,5 +8,9 @@ namespace HealthcareApp.Application.Interfaces
     {
         Task<IEnumerable<IllnessDto>> GetAllIllnessesAsync();
         Task<IllnessDto> GetIllnessByIdAsync(int id);
+        Task<IllnessDto> CreateIllnessAsync(IllnessDto illnessDto);
+        Task<IllnessDto> UpdateIllnessAsync(IllnessDto illnessDto);
+
+
     }
 }

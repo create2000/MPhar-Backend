@@ -2,19 +2,23 @@ using HealthcareApp.Application.Interfaces;
 using HealthcareApp.Domain.Entities;
 using HealthcareApp.Application.DTOs;
 using HealthcareApp.Domain.Interfaces;
+using HealthcareApp.Infrastructure.Data;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace HealthcareApp.Application.Services
 {
     public class RecommendationService : IRecommendationService
     {
         private readonly IRecommendationRepository _repository;
+        private readonly AppDbContext _dbContext;
 
-        public RecommendationService(IRecommendationRepository repository)
+        public RecommendationService(IRecommendationRepository repository, AppDbContext dbContext)
         {
             _repository = repository;
+            _dbContext = dbContext;
         }
 
         public async Task<IEnumerable<RecommendationDto>> GetAllRecommendationsAsync()
@@ -54,11 +58,13 @@ namespace HealthcareApp.Application.Services
                 PatientId = recommendationDto.PatientId,
                 HealthProfessionalId = recommendationDto.HealthProfessionalId,
                 RecommendationText = recommendationDto.RecommendationText,
-                IsCompleted = false
+                IsCompleted = false,
+                DateCreated = DateTime.UtcNow  // Ensure DateCreated is set
             };
 
             var createdRecommendation = await _repository.CreateAsync(recommendation);
 
+            // Returning the saved recommendation as a RecommendationDto
             return new RecommendationDto
             {
                 Id = createdRecommendation.Id,
@@ -80,7 +86,7 @@ namespace HealthcareApp.Application.Services
             return true;
         }
 
-        // ✅ Corrected method placement inside the class
+        // Method to get recommendations for a specific patient
         public async Task<IEnumerable<RecommendationDto>> GetRecommendationsForPatientAsync(int patientId)
         {
             var recommendations = await _repository.GetRecommendationsByPatientIdAsync(patientId);
@@ -95,5 +101,45 @@ namespace HealthcareApp.Application.Services
                 DateCreated = r.DateCreated
             });
         }
-    } // ✅ Closing brace of the class correctly placed
+
+        public async Task<RecommendationDto> AddRecommendationAsync(CreateRecommendationDto recommendationDto)
+        {
+            var recommendation = new Recommendation
+            {
+                PatientId = recommendationDto.PatientId,
+                HealthProfessionalId = recommendationDto.HealthProfessionalId,
+                RecommendationText = recommendationDto.RecommendationText,
+                IsCompleted = false,
+                DateCreated = DateTime.UtcNow  // Ensure DateCreated is set
+            };
+
+            var createdRecommendation = await _repository.CreateAsync(recommendation);
+
+            // Returning the saved recommendation as a RecommendationDto
+            return new RecommendationDto
+            {
+                Id = createdRecommendation.Id,
+                PatientId = createdRecommendation.PatientId,
+                HealthProfessionalId = createdRecommendation.HealthProfessionalId,
+                RecommendationText = createdRecommendation.RecommendationText,
+                IsCompleted = createdRecommendation.IsCompleted,
+                DateCreated = createdRecommendation.DateCreated
+            };
+        }
+
+       public async Task<RecommendationDto> GetByIllnessIdAsync(int illnessId)
+        {
+            var recommendation = await _dbContext.Recommendations
+                .Where(r => r.IllnessId == illnessId)
+                .Select(r => new RecommendationDto
+                {
+                    Id = r.Id,
+                    RecommendationText = r.RecommendationText,
+                    HealthProfessionalId = r.HealthProfessionalId
+                })
+                .ToListAsync();  // This should work if you're using EF Core
+
+            return recommendation.FirstOrDefault();  // Get the first or default recommendation
+        }
+    }
 }

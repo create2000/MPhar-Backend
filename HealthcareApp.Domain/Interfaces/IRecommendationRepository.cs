@@ -10,6 +10,8 @@ namespace HealthcareApp.Domain.Interfaces
         Task<Recommendation> GetByIdAsync(int id);
         Task<IEnumerable<Recommendation>> GetByPatientIdAsync(int patientId);
         Task<IEnumerable<Recommendation>> GetRecommendationsByPatientIdAsync(int patientId);
+        Task<IEnumerable<Recommendation>> GetRecommendationsByIllnessIdAsync(int illnessId);
+
         Task<Recommendation> CreateAsync(Recommendation recommendation);  // Missing method
 
         Task<bool> MarkAsCompletedAsync(int id);  // Missing method

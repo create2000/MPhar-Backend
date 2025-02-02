@@ -9,6 +9,7 @@ public interface IHealthProfessionalRepository
 {
     Task<IEnumerable<HealthProfessional>> GetAllAsync();
     Task<HealthProfessional> GetByIdAsync(int id);
+    Task AddAsync(HealthProfessional healthProfessional);
 }
 
 }

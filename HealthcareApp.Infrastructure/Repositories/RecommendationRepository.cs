@@ -66,5 +66,13 @@ namespace HealthcareApp.Infrastructure.Repositories
                                  .Where(r => r.PatientId == patientId)
                                  .ToListAsync();
         }
-    } // ✅ Correct closing brace for the class
-} // ✅ Correct closing brace for the namespace
+
+        public async Task<IEnumerable<Recommendation>> GetRecommendationsByIllnessIdAsync(int illnessId)
+        {
+            return await _context.Recommendations
+                .Where(r => r.IllnessId == illnessId)
+                .ToListAsync();
+        }
+
+    } 
+} 

@@ -29,7 +29,8 @@ namespace HealthcareApp.Application.Services
             { 
                 Id = r.Id,
                 PatientId = r.PatientId,
-                Diagnosis = r.Diagnosis,
+                Diagnosis = r.Diagnosis ?? "Unknown Diagnosis",
+                ReportDetails = r.ReportDetails ?? "No details provided",
                 CreatedAt = r.CreatedAt
             });
         }
@@ -54,6 +55,7 @@ namespace HealthcareApp.Application.Services
             {
                 PatientId = reportDto.PatientId,
                 Diagnosis = reportDto.Diagnosis,
+                ReportDetails = reportDto.ReportDetails,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -65,6 +67,7 @@ namespace HealthcareApp.Application.Services
                 Id = newReport.Id,
                 PatientId = newReport.PatientId,
                 Diagnosis = newReport.Diagnosis,
+                ReportDetails = reportDto.ReportDetails,
                 CreatedAt = newReport.CreatedAt
             };
         }

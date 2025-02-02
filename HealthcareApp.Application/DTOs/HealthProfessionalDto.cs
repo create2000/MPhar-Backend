@@ -7,6 +7,7 @@ namespace HealthcareApp.Application.DTOs
         public string Name { get; set; }
         public string Specialty { get; set; }
         public string ContactInfo { get; set; }
+        public string Role { get; set; }
     }
 
 }

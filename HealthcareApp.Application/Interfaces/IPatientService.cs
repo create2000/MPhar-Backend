@@ -8,5 +8,6 @@ namespace HealthcareApp.Application.Interfaces
     {
         Task<IEnumerable<PatientDto>> GetAllPatientsAsync();
         Task<PatientDto?> GetPatientByIdAsync(int id);
+        Task<PatientDto> CreatePatientAsync(PatientDto patientDto);
     }
 }

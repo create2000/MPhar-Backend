@@ -24,7 +24,8 @@ namespace HealthcareApp.Application.Services
             return patients.Select(p => new PatientDto
             {
                 Id = p.Id,
-                FullName = $"{p.FirstName} {p.LastName}",
+                FirstName = p.FirstName,
+                LastName = p.LastName,
                 Gender = p.Gender,
                 DateOfBirth = p.DateOfBirth
             });
@@ -38,10 +39,34 @@ namespace HealthcareApp.Application.Services
             return new PatientDto
             {
                 Id = patient.Id,
-                FullName = $"{patient.FirstName} {patient.LastName}",
+                FirstName = patient.FirstName,
+                LastName = patient.LastName,
                 Gender = patient.Gender,
                 DateOfBirth = patient.DateOfBirth
             };
         }
+
+        public async Task<PatientDto> CreatePatientAsync(PatientDto patientDto)
+        {
+            var patient = new Patient
+            {
+                FirstName = patientDto.FirstName,
+                LastName = patientDto.LastName,
+                Gender = patientDto.Gender,
+                DateOfBirth = patientDto.DateOfBirth
+            };
+
+            await _patientRepository.AddPatientAsync(patient);
+
+            return new PatientDto
+            {
+                Id = patient.Id,
+                FirstName = patientDto.FirstName,
+                LastName = patientDto.LastName,
+                Gender = patientDto.Gender,
+                DateOfBirth = patientDto.DateOfBirth
+            };
+        }
+
     }
 }

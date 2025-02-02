@@ -26,5 +26,18 @@ namespace HealthcareApp.Infrastructure.Repositories
         {
             return await _context.Illnesses.FindAsync(id);
         }
+
+        public async Task AddAsync(Illness illness)
+    {
+        await _context.Illnesses.AddAsync(illness);  // Add the illness entity to the context
+        await _context.SaveChangesAsync();  // Save the changes to the database
+    }
+
+     public async Task UpdateAsync(Illness illness)
+    {
+        _context.Set<Illness>().Update(illness);
+        await _context.SaveChangesAsync();
+    }
+
     }
 }

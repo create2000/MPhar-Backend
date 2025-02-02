@@ -26,5 +26,11 @@ namespace HealthcareApp.Infrastructure.Repositories
         {
             return await _context.Patients.FindAsync(id);
         }
+        public async Task AddPatientAsync(Patient patient)
+        {
+            await _context.Patients.AddAsync(patient);
+            await _context.SaveChangesAsync();
+        }
+
     }
 }

@@ -31,11 +31,32 @@ namespace HealthcareApp.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<PatientReportDto>> CreatePatientReport([FromBody] CreatePatientReportDto reportDTO) // Use CreatePatientReportDto for creating
+        public async Task<ActionResult<PatientReportDto>> CreatePatientReport([FromBody] CreatePatientReportDto reportDTO)
         {
-            var report = await _patientReportService.CreateReportAsync(reportDTO); // Updated method name
+            // Read the raw request body
+            using (var reader = new StreamReader(Request.Body))
+            {
+                var body = await reader.ReadToEndAsync();
+                Console.WriteLine($"Raw Request Body: {body}");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                Console.WriteLine("ModelState is invalid:");
+                foreach (var error in ModelState)
+                {
+                    Console.WriteLine($"{error.Key}: {string.Join(", ", error.Value.Errors.Select(e => e.ErrorMessage))}");
+                }
+                return BadRequest(ModelState);
+            }
+
+            Console.WriteLine($"Received Report Details: {reportDTO.ReportDetails}");
+
+            var report = await _patientReportService.CreateReportAsync(reportDTO);
             return CreatedAtAction(nameof(GetPatientReport), new { id = report.Id }, report);
         }
+
+
 
         [HttpGet("{id}")]
         public async Task<ActionResult<PatientReportDto>> GetPatientReport(int id)
