@@ -1,6 +1,5 @@
-using HealthcareApp.Application.DTOs; // Ensure this is the correct namespace for DTOs
-using HealthcareApp.Application.Interfaces; // For IRecommendationService
-using HealthcareApp.Domain.Entities; // For Recommendation
+using HealthcareApp.Application.DTOs;
+using HealthcareApp.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -29,7 +28,7 @@ namespace HealthcareApp.Api.Controllers
         }
 
         [HttpPost("add")]
-    public async Task<IActionResult> AddHealthProfessional([FromBody] HealthProfessionalDto healthProfessionalDto)
+        public async Task<IActionResult> AddHealthProfessional([FromBody] HealthProfessionalDto healthProfessionalDto)
         {
             if (healthProfessionalDto == null)
                 return BadRequest(new { message = "Invalid data" });
@@ -43,36 +42,42 @@ namespace HealthcareApp.Api.Controllers
         }
 
         [HttpGet("{id}")]
-    public async Task<IActionResult> GetHealthProfessionalById(int id)
+        public async Task<IActionResult> GetHealthProfessionalById(int id)
         {
             var professional = await _healthProfessionalService.GetHealthProfessionalByIdAsync(id);
-            
+
             if (professional == null)
                 return NotFound(new { message = "Health professional not found" });
 
             return Ok(professional);
         }
-
-
-        [HttpPost("recommend/{illnessId}")]
-        public async Task<IActionResult> SubmitRecommendation(int illnessId, [FromBody] RecommendationDto recommendationDto)
+            [HttpPost("recommend/{illnessId}")] 
+        public async Task<IActionResult> SubmitRecommendation(int illnessId, [FromBody] RecommendationDto recommendationDto) // illnessId is now int
         {
-            var illness = await _illnessService.GetIllnessByIdAsync(illnessId);
-            if (illness == null)
-                return NotFound(new { message = "Illness not found" });
+            var illness = await _illnessService.GetIllnessByIdAsync(illnessId.ToString()); 
 
-            // Correct the variable name to avoid conflict
-            var recommendation = new CreateRecommendationDto
+            if (illness == null)
             {
-                IllnessId = illnessId,  // Using illnessId from the route parameter
-                RecommendationText = recommendationDto.RecommendationText, // Assuming RecommendationDto contains this
-                HealthProfessionalId = recommendationDto.HealthProfessionalId // Assuming RecommendationDto contains this too
+                return NotFound(new { message = "Illness not found" });
+            }
+
+            if (recommendationDto.HealthProfessionalId <= 0)
+            {
+                return BadRequest(new { message = "Invalid HealthProfessionalId. Must be a positive integer." });
+            }
+
+            var createRecommendationDto = new CreateRecommendationDto
+            {
+                IllnessId = illnessId, 
+                RecommendationText = recommendationDto.RecommendationText,
+                HealthProfessionalId = recommendationDto.HealthProfessionalId
             };
 
-            // Assuming this method exists in IRecommendationService
-            await _recommendationService.CreateRecommendationAsync(recommendation);
+            await _recommendationService.CreateRecommendationAsync(createRecommendationDto);
 
             return Ok(new { message = "Recommendation submitted successfully" });
         }
     }
-}
+
+
+    }

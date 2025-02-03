@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HealthcareAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250202102246_PendingChanges")]
-    partial class PendingChanges
+    [Migration("20250203131215_FixHealthDuplicate")]
+    partial class FixHealthDuplicate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -72,10 +72,6 @@ namespace HealthcareAPI.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -130,11 +126,11 @@ namespace HealthcareAPI.Migrations
 
             modelBuilder.Entity("HealthcareApp.Domain.Entities.Illness", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<int?>("AssignedHealthProfessionalId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -144,7 +140,25 @@ namespace HealthcareAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PatientId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Recommendation")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RecommendationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("SubmissionDate")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("AssignedHealthProfessionalId");
+
+                    b.HasIndex("PatientId");
 
                     b.ToTable("Illnesses");
                 });
@@ -368,6 +382,24 @@ namespace HealthcareAPI.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("HealthcareApp.Domain.Entities.Illness", b =>
+                {
+                    b.HasOne("HealthcareApp.Domain.Entities.HealthProfessional", "AssignedHealthProfessional")
+                        .WithMany("Illnesses")
+                        .HasForeignKey("AssignedHealthProfessionalId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("HealthcareApp.Domain.Entities.AppUser", "Patient")
+                        .WithMany("Illnesses")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedHealthProfessional");
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -417,6 +449,16 @@ namespace HealthcareAPI.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("HealthcareApp.Domain.Entities.AppUser", b =>
+                {
+                    b.Navigation("Illnesses");
+                });
+
+            modelBuilder.Entity("HealthcareApp.Domain.Entities.HealthProfessional", b =>
+                {
+                    b.Navigation("Illnesses");
                 });
 #pragma warning restore 612, 618
         }

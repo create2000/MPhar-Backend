@@ -1,10 +1,8 @@
-
-using HealthcareApp.Application.DTOs; // Ensure this is the correct namespace for LoginDto and RegisterDto
-using HealthcareApp.Application.Interfaces; // For IAuthService
-using HealthcareApp.Domain.Entities; // For AppUser
+using HealthcareApp.Application.DTOs; 
+using HealthcareApp.Application.Interfaces; 
+using HealthcareApp.Domain.Entities; 
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authorization;
-
+using Microsoft.AspNetCore.Authorization; 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -16,16 +14,17 @@ using Microsoft.Extensions.Logging;
 
 namespace HealthcareApp.API.Controllers
 {
-    [Route("api/auth")] // Unified route prefix
+    [Route("api/auth")]
     [ApiController]
     public class AuthController : ControllerBase
     {
+        private readonly UserManager<AppUser> _userManager;
         private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
-        private readonly UserManager<AppUser> _userManager;
-        private readonly SignInManager<AppUser> _signInManager;
         private readonly IConfiguration _configuration;
+        private readonly SignInManager<AppUser> _signInManager;
 
+        // Constructor for dependency injection
         public AuthController(
             IAuthService authService,
             UserManager<AppUser> userManager,
@@ -42,56 +41,45 @@ namespace HealthcareApp.API.Controllers
 
         // POST api/auth/register-admin (Admin registration)
         [HttpPost("register-admin")]
-            public async Task<IActionResult> RegisterAdmin(RegisterDto dto)
+        public async Task<IActionResult> RegisterAdmin(RegisterDto dto)
+        {
+            _logger.LogInformation($"Received UserName: '{dto.UserName}'");
+
+            // Validate that the UserName is valid
+            if (string.IsNullOrWhiteSpace(dto.UserName) || !dto.UserName.All(char.IsLetterOrDigit))
             {
-                _logger.LogInformation($"Received UserName: '{dto.UserName}'");
-
-                // Validate that the UserName is valid
-                if (string.IsNullOrWhiteSpace(dto.UserName) || !dto.UserName.All(char.IsLetterOrDigit))
-                {
-                    return BadRequest(new { message = "Username can only contain letters and digits." });
-                }
-
-                if (dto.Role != "Admin")
-                {
-                    return BadRequest(new { message = "Role must be 'Admin' for Admin registration" });
-                }
-
-                
-                // Create the Admin user
-                var user = new AppUser
-                {
-                    UserName = dto.UserName,
-                    Email = dto.Email,
-                    FullName = dto.FullName,
-                    Role = "Admin"  // Explicitly set the role as 'Admin'
-                };
-
-                _logger.LogInformation("Creating Admin user with UserName: " + dto.UserName);
-                _logger.LogInformation($"UserName before CreateAsync: '{user.UserName}'");
-                _logger.LogInformation($"Email before CreateAsync: '{user.Email}'");
-                _logger.LogInformation($"Password before CreateAsync: '{dto.Password}'");
-
-                
-               
-
-                _logger.LogInformation($"UserName before CreateAsync: '{user.UserName}'");  // Check if the UserName is set
-
-                var result = await _userManager.CreateAsync(user, dto.Password);
-
-                if (!result.Succeeded)
-                {
-                    _logger.LogError("Error creating user: " + string.Join(", ", result.Errors.Select(e => e.Description)));
-                    return BadRequest(result.Errors);
-                }
-
-                // Assign the 'Admin' role to the user
-                await _userManager.AddToRoleAsync(user, "Admin");
-
-                _logger.LogInformation("Admin user created successfully.");
-                return Ok(new { message = "Admin registered successfully" });
+                return BadRequest(new { message = "Username can only contain letters and digits." });
             }
 
+            if (dto.Role != "Admin")
+            {
+                return BadRequest(new { message = "Role must be 'Admin' for Admin registration" });
+            }
+
+            // Create the Admin user
+            var user = new AppUser
+            {
+                UserName = dto.UserName,
+                Email = dto.Email,
+                FullName = dto.FullName
+            };
+
+            _logger.LogInformation("Creating Admin user with UserName: " + dto.UserName);
+
+            var result = await _userManager.CreateAsync(user, dto.Password);
+
+            if (!result.Succeeded)
+            {
+                _logger.LogError("Error creating user: " + string.Join(", ", result.Errors.Select(e => e.Description)));
+                return BadRequest(result.Errors);
+            }
+
+            // Assign the 'Admin' role to the user
+            await _userManager.AddToRoleAsync(user, "Admin");
+
+            _logger.LogInformation("Admin user created successfully.");
+            return Ok(new { message = "Admin registered successfully" });
+        }
 
         // POST api/auth/login (Login)
         [HttpPost("login")]
@@ -113,20 +101,65 @@ namespace HealthcareApp.API.Controllers
                 return Unauthorized(new { message = "Invalid password" });
             }
 
+            // Check if the user has a role assigned using UserManager
+            var roles = await _userManager.GetRolesAsync(user);
+            if (!roles.Contains("Admin") && !roles.Contains("Health Professional") && !roles.Contains("User"))
+            {
+                return Unauthorized(new { message = "Access denied for this role" });
+            }
+
             var token = GenerateJwtToken(user);
-            return Ok(new { token });
+            return Ok(new { token, role = roles });
         }
 
-        // Method to generate JWT token
-        private string GenerateJwtToken(AppUser user)
+        [HttpPost("admin/login")] 
+    public async Task<IActionResult> AdminLogin([FromBody] LoginDto dto)
         {
-            var claims = new[]
+            var user = await _userManager.FindByNameAsync(dto.UserName);
+            if (user == null)
+            {
+                user = await _userManager.FindByEmailAsync(dto.Email);
+                if (user == null)
+                {
+                    return Unauthorized(new { message = "Invalid username or email" });
+                }
+            }
+
+            var isValidPassword = await _userManager.CheckPasswordAsync(user, dto.Password);
+            if (!isValidPassword)
+            {
+                return Unauthorized(new { message = "Invalid password" });
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            if (!roles.Contains("Admin")) // Check if the user is an Admin
+            {
+                return Unauthorized(new { message = "Access denied for this role" });
+            }
+
+            var token = GenerateJwtToken(user);
+            return Ok(new { token, role = roles });
+        }
+
+
+        // Method to generate JWT token
+        private async Task<string> GenerateJwtToken(AppUser user)
+        {
+            // Retrieve the user's roles
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.Role, user.Role)  // Include 'Admin' or other roles here
             };
+
+            // Add the user's roles as claims
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", role));
+            }
 
             var jwtSettings = _configuration.GetSection("JwtSettings");
             var secret = jwtSettings["Secret"];
@@ -137,18 +170,6 @@ namespace HealthcareApp.API.Controllers
             {
                 _logger.LogError("JWT Secret is missing in configuration.");
                 throw new InvalidOperationException("JWT Secret is missing in configuration.");
-            }
-
-            if (string.IsNullOrEmpty(issuer))
-            {
-                _logger.LogError("JWT Issuer is missing in configuration.");
-                throw new InvalidOperationException("JWT Issuer is missing in configuration.");
-            }
-
-            if (string.IsNullOrEmpty(audience))
-            {
-                _logger.LogError("JWT Audience is missing in configuration.");
-                throw new InvalidOperationException("JWT Audience is missing in configuration.");
             }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
@@ -165,6 +186,7 @@ namespace HealthcareApp.API.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+
         // POST api/auth/signup (Optional user registration)
         [HttpPost("signup")]
         public async Task<IActionResult> SignUp([FromBody] SignUpModel model)
@@ -173,7 +195,6 @@ namespace HealthcareApp.API.Controllers
             {
                 UserName = model.UserName,
                 Email = model.Email,
-                Role = model.Role // Optionally assign role from request
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
@@ -181,10 +202,37 @@ namespace HealthcareApp.API.Controllers
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
-            // Optional: Assign role to user
+            // Assign role to user
             await _userManager.AddToRoleAsync(user, model.Role);
 
             return Ok(new { message = "User created successfully" });
+        }
+
+        [HttpPost("register-health-professional")]
+        public async Task<IActionResult> RegisterHealthProfessional(RegisterDto dto)
+        {
+            if (dto.Role != "Health Professional")
+            {
+                return BadRequest(new { message = "Role must be 'Health Professional'" });
+            }
+
+            var user = new AppUser
+            {
+                UserName = dto.UserName,
+                Email = dto.Email,
+                FullName = dto.FullName,
+            };
+
+            var result = await _userManager.CreateAsync(user, dto.Password);
+
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            await _userManager.AddToRoleAsync(user, "Health Professional");
+
+            return Ok(new { message = "Health Professional registered successfully" });
         }
 
         // Authorization to access Admin endpoints
@@ -194,14 +242,21 @@ namespace HealthcareApp.API.Controllers
         {
             return Ok(new { message = "Welcome to the Admin dashboard!" });
         }
+
+        [Authorize(Roles = "HealthProfessional")]
+        [HttpGet("healthprofessional/dashboard")]
+        public IActionResult HealthProfessionalDashboard()
+        {
+            return Ok(new { message = "Welcome to the Health Professional dashboard!" });
+        }
     }
 
-    // Model for SignUp (not strictly necessary for admin registration)
+    // Model for SignUp (make sure it's defined in the same file or imported properly)
     public class SignUpModel
     {
         public string UserName { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
-        public string Role { get; set; } // Can be "Admin", "HealthcareProfessional", etc.
+        public string Role { get; set; } 
     }
 }
