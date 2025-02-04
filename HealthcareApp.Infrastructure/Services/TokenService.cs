@@ -7,8 +7,8 @@ using HealthcareApp.Application.Interfaces;
 using HealthcareApp.Infrastructure.Configuration;
 using HealthcareApp.Domain.Entities;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.AspNetCore.Identity; // Import Identity namespace for UserManager
-using System.Threading.Tasks; // Ensure you're using the correct namespace for async
+using Microsoft.AspNetCore.Identity; 
+using System.Threading.Tasks; 
 
 namespace HealthcareApp.Infrastructure.Services
 {

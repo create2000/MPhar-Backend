@@ -164,3 +164,5 @@ C:\Users\Administrator\Desktop\HealthcareAPP\obj\Debug\net9.0\refint\HealthcareA
 C:\Users\Administrator\Desktop\HealthcareAPP\obj\Debug\net9.0\HealthcareAPI.pdb
 C:\Users\Administrator\Desktop\HealthcareAPP\obj\Debug\net9.0\HealthcareAPI.genruntimeconfig.cache
 C:\Users\Administrator\Desktop\HealthcareAPP\obj\Debug\net9.0\ref\HealthcareAPI.dll
+C:\Users\Administrator\Desktop\HealthcareAPP\bin\Debug\net9.0\DotNetEnv.dll
+C:\Users\Administrator\Desktop\HealthcareAPP\bin\Debug\net9.0\Sprache.dll

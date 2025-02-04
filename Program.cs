@@ -1,3 +1,4 @@
+using DotNetEnv;
 using HealthcareApp.Infrastructure.Data; // For AppDbContext
 using HealthcareApp.Domain.Interfaces; // For IPatientService and IPatientRepository
 using HealthcareApp.Infrastructure.Repositories; // For PatientRepository
@@ -13,21 +14,31 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
-// Retrieve JwtSettings from configuration
-var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+// Load environment variables
+DotNetEnv.Env.Load();
 
-// Validate JwtSettings
-if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.Secret) || string.IsNullOrEmpty(jwtSettings.Issuer) || string.IsNullOrEmpty(jwtSettings.Audience))
+// Retrieve and configure JwtSettings
+var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()
+    ?? throw new InvalidOperationException("JwtSettings are missing or incomplete in appsettings.json.");
+
+var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+if (!string.IsNullOrEmpty(jwtSecret))
 {
-    throw new InvalidOperationException("JwtSettings are missing or incomplete in appsettings.json.");
+    jwtSettings.Secret = jwtSecret;
 }
+
+// Register JwtSettings
+builder.Services.Configure<JwtSettings>(options =>
+{
+    options.Secret = jwtSettings.Secret;
+    options.Issuer = jwtSettings.Issuer;
+    options.Audience = jwtSettings.Audience;
+    options.ExpiryMinutes = jwtSettings.ExpiryMinutes;
+});
 
 // Add DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Configure JwtSettings
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 
 // Register Password Hasher
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
@@ -37,7 +48,7 @@ builder.Services.AddIdentity<AppUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-// Add Repositories and Services
+// Register Repositories & Services
 builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -62,9 +73,9 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add Controllers and Swagger
+// Add Controllers & Swagger
 builder.Services.AddControllers()
-.AddJsonOptions(options =>
+    .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
@@ -73,15 +84,15 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Seed default roles
+// Seed default roles asynchronously
 using (var scope = app.Services.CreateScope())
 {
     var serviceProvider = scope.ServiceProvider;
-    await SeedRoles(serviceProvider);
+    SeedRoles(serviceProvider).GetAwaiter().GetResult(); // Ensures sync execution in `Main`
 }
 
-// Enable Swagger in Development
-if (app.Environment.IsDevelopment())
+// Enable Swagger only in Development
+if (app.Environment.EnvironmentName == "Development")
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
@@ -96,9 +107,7 @@ app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
 
 // Seeding method for roles
